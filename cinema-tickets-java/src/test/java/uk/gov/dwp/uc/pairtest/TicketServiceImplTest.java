@@ -70,4 +70,51 @@ class TicketServiceImplTest {
             assertDoesNotThrow(() -> ticketService.purchaseTickets(1L, request));
         }
     }
+
+    // 2. Request Payload Validation
+
+
+    @Nested
+    @DisplayName("Request payload validation")
+    class RequestPayloadValidation {
+
+        @Test
+        @DisplayName("Throws when no ticket requests are provided")
+        void throwsWhenNoRequestsProvided() {
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L));
+        }
+
+        @Test
+        @DisplayName("Throws when ticket requests array is null")
+        void throwsWhenRequestsArrayIsNull() {
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, (TicketTypeRequest[]) null));
+        }
+
+        @Test
+        @DisplayName("Throws when any individual request is null")
+        void throwsWhenIndividualRequestIsNull() {
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, (TicketTypeRequest) null));
+        }
+
+        @Test
+        @DisplayName("Throws when a request specifies zero tickets")
+        void throwsWhenRequestHasZeroTickets() {
+            TicketTypeRequest request = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 0);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, request));
+        }
+
+        @Test
+        @DisplayName("Throws when a request specifies a negative number of tickets")
+        void throwsWhenRequestHasNegativeTickets() {
+            TicketTypeRequest request = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, -3);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, request));
+        }
+    }
+
+
 }
