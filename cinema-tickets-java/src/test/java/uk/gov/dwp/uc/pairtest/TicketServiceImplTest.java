@@ -244,6 +244,49 @@ class TicketServiceImplTest {
     }
 
 
+    // 5. Seat Reservation Calculation
+
+
+    @Nested
+    @DisplayName("Seat reservation calculation")
+    class SeatReservationCalculation {
+
+        @Test
+        @DisplayName("Reserves 1 seat for one Adult")
+        void reservesOneSeatForOneAdult() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            ticketService.purchaseTickets(1L, adultRequest);
+            verify(seatReservationService).reserveSeat(1L, 1);
+        }
+
+        @Test
+        @DisplayName("Reserves 2 seats for one Adult and one Child")
+        void reservesTwoSeatsForAdultAndChild() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            TicketTypeRequest childRequest = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 1);
+            ticketService.purchaseTickets(1L, adultRequest, childRequest);
+            verify(seatReservationService).reserveSeat(1L, 2);
+        }
+
+        @Test
+        @DisplayName("Infants do not receive a seat")
+        void infantsDoNotGetSeats() {
+            TicketTypeRequest adultRequest  = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 2);
+            ticketService.purchaseTickets(1L, adultRequest, infantRequest);
+            verify(seatReservationService).reserveSeat(1L, 2); // Only adults get seats
+        }
+
+        @Test
+        @DisplayName("Mixed purchase: 2 Adults + 3 Children + 1 Infant reserves 5 seats")
+        void reservesCorrectSeatsForMixedPurchase() {
+            TicketTypeRequest adultRequest  = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
+            TicketTypeRequest childRequest  = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 3);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+            ticketService.purchaseTickets(1L, adultRequest, childRequest, infantRequest);
+            verify(seatReservationService).reserveSeat(1L, 5); // 2 adults + 3 children
+        }
+    }
 
 
 }
