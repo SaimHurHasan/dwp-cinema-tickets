@@ -182,6 +182,68 @@ class TicketServiceImplTest {
         }
     }
 
+// 4. Payment Calculation
+
+
+    @Nested
+    @DisplayName("Payment calculation")
+    class PaymentCalculation {
+
+        @Test
+        @DisplayName("Charges £25 for one Adult ticket")
+        void chargesCorrectlyForOneAdult() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            ticketService.purchaseTickets(1L, adultRequest);
+            verify(ticketPaymentService).makePayment(1L, 25);
+        }
+
+        @Test
+        @DisplayName("Charges £50 for two Adult tickets")
+        void chargesCorrectlyForTwoAdults() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
+            ticketService.purchaseTickets(1L, adultRequest);
+            verify(ticketPaymentService).makePayment(1L, 50);
+        }
+
+        @Test
+        @DisplayName("Charges £40 for one Adult and one Child ticket")
+        void chargesCorrectlyForOneAdultAndOneChild() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            TicketTypeRequest childRequest = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 1);
+            ticketService.purchaseTickets(1L, adultRequest, childRequest);
+            verify(ticketPaymentService).makePayment(1L, 40); // £25 + £15
+        }
+
+        @Test
+        @DisplayName("Infants are free — charge does not include infant cost")
+        void infantsAreChargedNothing() {
+            TicketTypeRequest adultRequest  = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+            ticketService.purchaseTickets(1L, adultRequest, infantRequest);
+            verify(ticketPaymentService).makePayment(1L, 25); // Only the adult's £25
+        }
+
+        @Test
+        @DisplayName("Mixed purchase: 2 Adults + 3 Children + 1 Infant = £95")
+        void chargesCorrectlyForMixedPurchase() {
+            // (2 × £25) + (3 × £15) + (1 × £0) = £50 + £45 = £95
+            TicketTypeRequest adultRequest  = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
+            TicketTypeRequest childRequest  = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 3);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+            ticketService.purchaseTickets(1L, adultRequest, childRequest, infantRequest);
+            verify(ticketPaymentService).makePayment(1L, 95);
+        }
+
+        @Test
+        @DisplayName("Charges £625 for maximum 25 Adult tickets")
+        void chargesCorrectlyForMaxAdults() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 25);
+            ticketService.purchaseTickets(1L, adultRequest);
+            verify(ticketPaymentService).makePayment(1L, 625);
+        }
+    }
+
+
 
 
 }
