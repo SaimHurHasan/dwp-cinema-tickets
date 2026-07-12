@@ -288,5 +288,58 @@ class TicketServiceImplTest {
         }
     }
 
+    // 6. Service Delegation
+
+
+    @Nested
+    @DisplayName("Service delegation")
+    class ServiceDelegation {
+
+        @Test
+        @DisplayName("Payment service is called exactly once per valid request")
+        void paymentServiceCalledExactlyOnce() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            ticketService.purchaseTickets(1L, adultRequest);
+            verify(ticketPaymentService, times(1)).makePayment(anyLong(), anyInt());
+        }
+
+        @Test
+        @DisplayName("Seat reservation service is called exactly once per valid request")
+        void seatReservationServiceCalledExactlyOnce() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            ticketService.purchaseTickets(1L, adultRequest);
+            verify(seatReservationService, times(1)).reserveSeat(anyLong(), anyInt());
+        }
+
+        @Test
+        @DisplayName("Neither service is called when the request is invalid")
+        void noServicesCalledOnInvalidRequest() {
+            TicketTypeRequest childRequest = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 1);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, childRequest));
+            verifyNoInteractions(ticketPaymentService);
+            verifyNoInteractions(seatReservationService);
+        }
+
+        @Test
+        @DisplayName("Correct account ID is passed to both services")
+        void correctAccountIdPassedToServices() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            ticketService.purchaseTickets(42L, adultRequest);
+            verify(ticketPaymentService).makePayment(eq(42L), anyInt());
+            verify(seatReservationService).reserveSeat(eq(42L), anyInt());
+        }
+
+        @Test
+        @DisplayName("Multiple requests of the same type are aggregated correctly")
+        void multipleRequestsOfSameTypeAreAggregated() {
+            TicketTypeRequest adultRequest1 = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 2);
+            TicketTypeRequest adultRequest2 = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 3);
+            ticketService.purchaseTickets(1L, adultRequest1, adultRequest2);
+            // 5 adults = £125, 5 seats
+            verify(ticketPaymentService).makePayment(1L, 125);
+            verify(seatReservationService).reserveSeat(1L, 5);
+        }
+    }
 
 }
