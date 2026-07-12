@@ -116,5 +116,72 @@ class TicketServiceImplTest {
         }
     }
 
+    // 3. Business Rule Validation
+
+
+    @Nested
+    @DisplayName("Business rule validation")
+    class BusinessRuleValidation {
+
+        @Test
+        @DisplayName("Throws when only Child tickets are requested (no Adult)")
+        void throwsWhenChildTicketsWithoutAdult() {
+            TicketTypeRequest childRequest = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 2);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, childRequest));
+        }
+
+        @Test
+        @DisplayName("Throws when only Infant tickets are requested (no Adult)")
+        void throwsWhenInfantTicketsWithoutAdult() {
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, infantRequest));
+        }
+
+        @Test
+        @DisplayName("Throws when Child and Infant tickets are requested without Adult")
+        void throwsWhenChildAndInfantWithoutAdult() {
+            TicketTypeRequest childRequest  = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 2);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 1);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, childRequest, infantRequest));
+        }
+
+        @Test
+        @DisplayName("Throws when total ticket count exceeds 25")
+        void throwsWhenTotalTicketsExceedMaximum() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 20);
+            TicketTypeRequest childRequest = new TicketTypeRequest(TicketTypeRequest.Type.CHILD, 6);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, adultRequest, childRequest));
+        }
+
+        @Test
+        @DisplayName("Accepts exactly 25 tickets (the maximum)")
+        void acceptsExactlyMaximumTickets() {
+            TicketTypeRequest adultRequest = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 25);
+            assertDoesNotThrow(() -> ticketService.purchaseTickets(1L, adultRequest));
+        }
+
+        @Test
+        @DisplayName("Throws when infants outnumber adults")
+        void throwsWhenInfantsOutnumberAdults() {
+            TicketTypeRequest adultRequest  = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 1);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 2);
+            assertThrows(InvalidPurchaseException.class,
+                    () -> ticketService.purchaseTickets(1L, adultRequest, infantRequest));
+        }
+
+        @Test
+        @DisplayName("Accepts when infants equal adults (each infant on one adult's lap)")
+        void acceptsWhenInfantsEqualAdults() {
+            TicketTypeRequest adultRequest  = new TicketTypeRequest(TicketTypeRequest.Type.ADULT, 3);
+            TicketTypeRequest infantRequest = new TicketTypeRequest(TicketTypeRequest.Type.INFANT, 3);
+            assertDoesNotThrow(() -> ticketService.purchaseTickets(1L, adultRequest, infantRequest));
+        }
+    }
+
+
 
 }
